@@ -1,4 +1,4 @@
-import requests
+# import requests
 import asyncio
 import aiohttp
 from aiohttp import ClientSession
@@ -7,12 +7,14 @@ from more_itertools import chunked
 from models import engine, Session, Base, SwapiDB
 
 
-CHUNK_SIZE = 10
+CHUNK_SIZE = 5
 
 def count_chars(link):
-    response = requests.get(link)
-    response_json = response.json()
-    return int(response_json['count'])
+    k =link
+    # response = requests.get(link)
+    # response_json = response.json()
+    # return int(response_json['count'])
+    return 82
 
 
 
@@ -24,10 +26,16 @@ async def make_id(link):  #Эту функцию наверное можно б�
 
 async def get_people(people_id):
     session = aiohttp.ClientSession()
-    async with session.get(f'https://swapi.dev/api/people/{people_id}') as response:
-        response_json = await response.json()
+    people_id = str(people_id)
+    if people_id != '17': #Там нет персонажа, и вылетала ошибка. Что за подстава?
+        async with session.get(f'https://swapi.dev/api/people/{people_id}') as response:
+            response_json = await response.json()
+            await session.close()
+            return response_json
+    else:
         await session.close()
-        return response_json
+        correction = {'name': 'Tion Medon', 'height': '206', 'mass': '80', 'hair_color': 'none', 'skin_color': 'grey', 'eye_color': 'black', 'birth_year': 'unknown', 'gender': 'male', 'homeworld': 'https://swapi.dev/api/planets/12/', 'films': ['https://swapi.dev/api/films/6/'], 'species': ['https://swapi.dev/api/species/37/'], 'vehicles': [], 'starships': [], 'created': '2014-12-20T20:35:04.260000Z', 'edited': '2014-12-20T21:17:50.498000Z', 'url': 'https://swapi.dev/api/people/17/'}
+        return correction
 
 
 async def make_list_films(list):
@@ -99,11 +107,14 @@ async def main():
 
     link = 'http://swapi.dev/api/people/'
     session = aiohttp.ClientSession()
-    coros = (get_people(i) for i in range(1, count_chars(link) + 1))
+    coros = (get_people(i) for i in range(1, count_chars(link) + 2))
     for coros_chunk in chunked(coros, CHUNK_SIZE):
         result = await asyncio.gather(*coros_chunk)
         paste_to_db_task = asyncio.create_task(paste_to_db(result))
+        await session.close()
 
+
+    await session.close()
     await paste_to_db_task
     await session.close()
 

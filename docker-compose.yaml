@@ -6,8 +6,8 @@ services:
   db:
     image: postgres:14-alpine3.15
     ports:
-      - "5431:5432"
+      - "5430:5432"
     environment:
       POSTGRES_USER: app
       POSTGRES_PASSWORD: 1234
-      POSTGRES_DB: asyncdb
+      POSTGRES_DB: asyncdbs

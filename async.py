@@ -9,7 +9,7 @@ from models import engine, Session, Base, SwapiDB
 
 CHUNK_SIZE = 5
 
-def count_chars(link):
+async def count_chars(link):
     k =link
     # response = requests.get(link)
     # response_json = response.json()
@@ -96,7 +96,6 @@ async def paste_to_db(results):
     async with Session() as session:
         session.add_all(swapi_people)
         await session.commit()
-        await session.close()
 
 
 
@@ -107,19 +106,17 @@ async def main():
 
     link = 'http://swapi.dev/api/people/'
     session = aiohttp.ClientSession()
-    coros = (get_people(i) for i in range(1, count_chars(link) + 2))
+    coros = (get_people(i) for i in range(1, await count_chars(link) + 2))
     for coros_chunk in chunked(coros, CHUNK_SIZE):
         result = await asyncio.gather(*coros_chunk)
         asyncio.create_task(paste_to_db(result))
-        await session.close()
-
 
     await session.close()
-    set_tasks = asyncio.current_task()
+    set_tasks = asyncio.all_tasks()
     for task in set_tasks:
         if task != asyncio.current_task():
             await task
-    await session.close()
+
 
 
 asyncio.run(main())

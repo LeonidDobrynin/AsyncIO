@@ -110,12 +110,15 @@ async def main():
     coros = (get_people(i) for i in range(1, count_chars(link) + 2))
     for coros_chunk in chunked(coros, CHUNK_SIZE):
         result = await asyncio.gather(*coros_chunk)
-        paste_to_db_task = asyncio.create_task(paste_to_db(result))
+        asyncio.create_task(paste_to_db(result))
         await session.close()
 
 
     await session.close()
-    await paste_to_db_task
+    set_tasks = asyncio.current_task()
+    for task in set_tasks:
+        if task != asyncio.current_task():
+            await task
     await session.close()
 
 
